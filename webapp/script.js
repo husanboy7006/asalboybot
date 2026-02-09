@@ -329,7 +329,12 @@ async function bootstrap() {
         const r = await fetch("/api/products");
         const j = await r.json();
         PRODUCTS = j.items || [];
-        render();
+
+        // Initial render logic based on LANG
+        const activeTab = document.querySelector(".tab.active");
+        const cat = activeTab ? activeTab.dataset.cat : "all";
+        render(cat);
+
     } catch (e) {
         grid.innerHTML = `<div style="color:red; text-align:center">Xatolik: ${e.message}</div>`;
     }
