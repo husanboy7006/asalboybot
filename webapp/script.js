@@ -1,5 +1,5 @@
 const tg = window.Telegram?.WebApp;
-let LANG = "uz";
+let LANG = "ru";
 
 // Helper to get URL query params
 function getQueryParam(name) {
