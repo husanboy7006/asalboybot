@@ -1,0 +1,7 @@
+.venv/
+.env
+__pycache__/
+*.log
+.vscode/
+data/
+cf_tunnel*

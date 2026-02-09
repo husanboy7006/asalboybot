@@ -1,0 +1,72 @@
+{
+  "7110271171": {
+    "lang": "uz",
+    "phone": "+998950847006",
+    "cart": [
+      {
+        "product_id": "p3",
+        "weight": "1",
+        "qty": 1
+      },
+      {
+        "product_id": "p4",
+        "weight": "1",
+        "qty": 1
+      }
+    ],
+    "delivery": "pickup",
+    "geo": {
+      "lat": 41.227453,
+      "lon": 69.177705
+    },
+    "address_text": null,
+    "region": "Buxoro",
+    "street": "2",
+    "home": "56a",
+    "note": "k",
+    "addresses": [
+      {
+        "region": "Янгихаёт",
+        "street": "6",
+        "home": "3",
+        "lat": 41.227491,
+        "lon": 69.17775,
+        "id": "09b2f0"
+      },
+      {
+        "region": "Янгихаёт",
+        "street": "Янгихаёт",
+        "home": "⬅️ Orqaga",
+        "lat": 41.22747,
+        "lon": 69.177084,
+        "id": "c678c6"
+      },
+      {
+        "region": "Мирабад",
+        "street": "3",
+        "home": "4",
+        "lat": 41.227463,
+        "lon": 69.177313,
+        "id": "3d26fd"
+      }
+    ],
+    "phones": [
+      "998950847006",
+      "+998950847006"
+    ]
+  },
+  "5438306292": {
+    "lang": "uz",
+    "phone": "998909581888",
+    "cart": [
+      {
+        "product_id": "tog_asali",
+        "weight": "1",
+        "qty": 1
+      }
+    ],
+    "delivery": "courier",
+    "region": "🚚 Yetkazib berish",
+    "street": "Chilonzor 3 kvartal 1 dom"
+  }
+}
