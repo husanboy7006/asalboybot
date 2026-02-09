@@ -301,8 +301,8 @@ function cardHTML(p, idx) {
 
     // Translation Logic
     const pName = (LANG === "ru" && p.name_ru) ? p.name_ru : p.name_uz;
-    // Fallback to uz if ru desc is missing
-    const pDesc = (LANG === "ru" && p.desc_ru) ? p.desc_ru : (p.info_short || p.desc_uz || "");
+    // Use info_short_ru for Russian, fallback to info_short (Uzbek)
+    const pDesc = (LANG === "ru" && p.info_short_ru) ? p.info_short_ru : (p.info_short || p.desc_uz || "");
     const sumText = LANG === "ru" ? "сум" : "so'm";
 
     return `
