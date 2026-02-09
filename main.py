@@ -77,6 +77,16 @@ TR = {
         "loc_bad": "Lokatsiya olinmadi. 'Lokatsiyani yuborish' tugmasini bosing.",
         "thanks": "✅ Rahmat! Buyurtmangiz qabul qilindi.",
         "info_btn": "Asal haqida",
+        # New keys for WebApp keys
+        "ord_new": "🆕 WebApp buyurtma #{id}",
+        "ord_from": "👤 Kimdan: {name}",
+        "ord_user": "🧑‍💻 User: {user}",
+        "ord_phone": "📞 Telefon: {phone}",
+        "ord_addr": "🏠 Manzil: {addr}",
+        "ord_items": "🛒 Mahsulotlar:",
+        "ord_total": "<b>Jami:</b> {total} so'm",
+        "ord_map": "\n📍 <a href='{link}'>Google Xarita</a>",
+        "ord_received": "✅ WebApp orqali buyurtma qabul qilindi. Rahmat!",
     },
     "ru": {
         "welcome": "Здравствуйте! Добро пожаловать в <b>Asalboy</b>.",
@@ -109,6 +119,16 @@ TR = {
         "loc_bad": "Геолокация не получена.",
         "thanks": "✅ Спасибо! Заказ принят.",
         "info_btn": "О мёде",
+        # New keys for WebApp keys
+        "ord_new": "🆕 Заказ WebApp #{id}",
+        "ord_from": "👤 От: {name}",
+        "ord_user": "🧑‍💻 User: {user}",
+        "ord_phone": "📞 Телефон: {phone}",
+        "ord_addr": "🏠 Адрес: {addr}",
+        "ord_items": "🛒 Товары:",
+        "ord_total": "<b>Итого:</b> {total} сум",
+        "ord_map": "\n📍 <a href='{link}'>Google Maps</a>",
+        "ord_received": "✅ Заказ через WebApp принят. Спасибо!",
     }
 }
 
@@ -911,7 +931,12 @@ async def on_webapp_data(message: Message, state: FSMContext):
     try:
         payload = json.loads(message.web_app_data.data)
     except Exception:
-        return await message.answer("Noto‘g‘ri ma’lumot.")
+        return await message.answer("Error parsing data.")
+    
+    # Get user language
+    s = await state.get_data()
+    lang = get_lang(s)
+
     cart = []
     total = 0
     for it in payload.get("items", []):
@@ -921,10 +946,14 @@ async def on_webapp_data(message: Message, state: FSMContext):
         qty = int(it.get("qty", 1))
         one = unit_price_1kg(p)
         price = one * qty
+        # Choose name based on language
+        p_name = p.get("name_uz") if lang == "uz" else p.get("name_ru")
+        p_name = p_name or p.get("name_uz") or "Nomsiz"
+
         cart.append(
             {
                 "product_id": str(p["id"]),
-                "name": p["name_uz"],
+                "name": p_name,
                 "kg": 1.0,
                 "qty": qty,
                 "unit_price": one,
@@ -944,20 +973,29 @@ async def on_webapp_data(message: Message, state: FSMContext):
     
     maps_link = ""
     if lat and lon:
-        maps_link = f"\n📍 <a href='https://www.google.com/maps?q={lat},{lon}'>Google Maps</a>"
+        link_url = f"https://www.google.com/maps?q={lat},{lon}"
+        maps_link = t(lang, "ord_map", link=link_url)
 
+    # Build msg using translations
+    user_handle = f"@{message.from_user.username}" if message.from_user.username else "N/A"
+    
     txt = (
-        f"🆕 WebApp buyurtma #{order_id}\n"
-        f"👤 From: {html.quote(name)}\n"
-        f"🧑‍💻 User: @{message.from_user.username or 'N/A'} ({message.from_user.id})\n"
-        f"📞 Phone: {html.quote(phone)}\n"
-        f"🏠 Address: {html.quote(address)}{maps_link}\n\n🛒 Items:\n"
+        f"{t(lang, 'ord_new', id=order_id)}\n"
+        f"{t(lang, 'ord_from', name=html.quote(name))}\n"
+        f"{t(lang, 'ord_user', user=f'{user_handle} ({message.from_user.id})')}\n"
+        f"{t(lang, 'ord_phone', phone=html.quote(phone))}\n"
+        f"{t(lang, 'ord_addr', addr=html.quote(address))}{maps_link}\n\n"
+        f"{t(lang, 'ord_items')}\n"
     )
     for it in cart:
         txt += (
-            f"• {it['name']} — 1 kg x{it['qty']} — {it['price']} so'm\n"
+            f"• {it['name']} — 1 kg x{it['qty']} — {it['price']} \n"
         )
-    txt += f"\n<b>Jami:</b> {total} so'm"
+    # Total
+    # Note: t() returns string. We can just append.
+    # We used 'so\'m' in translation, but here let's stick to formatted string if needed or translation
+    # The translation key "ord_total" already has {total} placeholder
+    txt += f"\n{t(lang, 'ord_total', total=total)}"
     
     if ADMIN_CHAT_ID:
         try:
@@ -966,9 +1004,8 @@ async def on_webapp_data(message: Message, state: FSMContext):
                 await bot.send_location(ADMIN_CHAT_ID, latitude=lat, longitude=lon)
         except Exception:
             logging.exception("Adminga yuborilmadi (webapp)")
-    await message.answer(
-        "✅ WebApp orqali buyurtma qabul qilindi. Rahmat!"
-    )
+    
+    await message.answer(t(lang, "ord_received"))
 
 
 # ====== RUN ======
