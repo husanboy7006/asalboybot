@@ -981,42 +981,53 @@ if __name__ == "__main__":
             uvloop.install()
     except Exception as e:
         logging.warning("uvloop o‘rnatilmadi: %s", e)
-
     async def main():
-        # Webhook setup
+        # Get environment variables
         WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook")
-        WEBHOOK_URL = APP_PUBLIC_URL.rstrip("/app").rstrip("/") + WEBHOOK_PATH
+        # Ensure we construct the full URL correctly. 
+        # rstrip('/') avoids double slashes, e.g. "https://site.com/" + "/webhook"
+        base_url = APP_PUBLIC_URL.rstrip("/app").rstrip("/") 
+        WEBHOOK_URL = base_url + WEBHOOK_PATH
         
-        await bot.set_webhook(WEBHOOK_URL)
-        logging.info(f"Using Webhook: {WEBHOOK_URL}")
-
-        # Integrate AIOGRAM with AIOHTTP
-        from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-        
-        workflow_data = {"dispatcher": dp, "bot": bot}
-        webhook_requests_handler = SimpleRequestHandler(
-            dispatcher=dp,
-            bot=bot,
-            **workflow_data
-        )
-        webhook_requests_handler.register(webapp, path=WEBHOOK_PATH)
-        setup_application(webapp, dp, bot=bot)
-
-        if ADMIN_CHAT_ID:
-            try:
-                await bot.send_message(ADMIN_CHAT_ID, "🚀 Bot (Webhook) ishga tushdi")
-            except Exception:
-                logging.exception("Start ping yuborilmadi")
-
-        # Start AIOHTTP server
+        # 1. Start Web Server (AIOHTTP)
+        # We need the server running to handle the webhook requests from Telegram
         runner = web.AppRunner(webapp)
         await runner.setup()
         site = web.TCPSite(runner, APP_HOST, APP_PORT)
         await site.start()
-        
-        logging.info(f"WebApp started on http://{APP_HOST}:{APP_PORT}")
+        logging.info(f"✅ WebServer started on http://{APP_HOST}:{APP_PORT}")
 
-        # Keep alive
+        # 2. Set Webhook
+        # We use 'drop_pending_updates=True' to skip old piled up updates
+        await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
+        logging.info(f"✅ Webhook set to: {WEBHOOK_URL}")
+
+        # 3. Connect Dispatcher to Web App
+        from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+        
+        # SimpleRequestHandler handles incoming POST requests from Telegram
+        webhook_requests_handler = SimpleRequestHandler(
+            dispatcher=dp,
+            bot=bot,
+        )
+        # Register the handler to the specific path
+        webhook_requests_handler.register(webapp, path=WEBHOOK_PATH)
+        
+        # Setup application (links bot and dp to app)
+        setup_application(webapp, dp, bot=bot)
+
+        # 4. Notify Admin
+        if ADMIN_CHAT_ID:
+            try:
+                await bot.send_message(ADMIN_CHAT_ID, f"🚀 Bot (Webhook) ishga tushdi!\nURL: {APP_PUBLIC_URL}")
+            except Exception:
+                logging.exception("Start ping yuborilmadi")
+
+        # 5. Keep alive indefinitely
+        # Since we are not polling, we just need to keep the event loop running
         await asyncio.Event().wait()
 
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        logging.info("Bot stopped!")
