@@ -52,11 +52,16 @@
           <h3>Ma'lumotlaringiz</h3>
           <input id="name" placeholder="Ismingiz" required />
           <input id="phone" placeholder="Telefon (+998...)" type="tel" required />
-          <input id="phone" placeholder="Telefon (+998...)" type="tel" required />
-          <div class="loc-row" style="display:flex; gap:10px; margin-bottom:10px">
-            <input id="address" placeholder="Manzil (mo'ljal)" required style="flex-grow:1" />
-            <button type="button" id="locBtn" onclick="getLocation()"
-              style="width:50px; padding:0; font-size:20px">📍</button>
+          <div class="loc-row">
+            <input id="address" placeholder="Manzil (mo'ljal)" required />
+            <button type="button" id="locBtn" class="loc-btn" onclick="getLocation()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="10" r="3" />
+                <path
+                  d="M12 2a8 8 0 0 0-8 8c0 5.4 7 11.5 7.3 11.8a1 1 0 0 0 1.4 0C13 21.5 20 15.4 20 10a8 8 0 0 0-8-8z" />
+              </svg>
+            </button>
           </div>
         </div>
 

@@ -222,7 +222,17 @@ let userLon = null;
 
 window.getLocation = function () {
     const btn = document.getElementById("locBtn");
-    btn.textContent = "⏳";
+
+    // Store original SVG
+    const originalSVG = btn.innerHTML;
+
+    // Loading state
+    btn.classList.remove('success', 'error');
+    btn.classList.add('loading');
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 6v6l4 2"/>
+    </svg>`;
 
     const notSupported = LANG === "ru" ? "Ваш браузер не поддерживает геолокацию." : "Brauzeringiz lokatsiyani qo'llab-quvvatlamaydi.";
     const locError = LANG === "ru" ? "Не удалось определить локацию. Введите адрес вручную." : "Lokatsiyani aniqlab bo'lmadi. Iltimos, manzilni yozma kiriting.";
@@ -230,7 +240,8 @@ window.getLocation = function () {
 
     if (!navigator.geolocation) {
         alert(notSupported);
-        btn.textContent = "📍";
+        btn.classList.remove('loading');
+        btn.innerHTML = originalSVG;
         return;
     }
 
@@ -238,8 +249,13 @@ window.getLocation = function () {
         (pos) => {
             userLat = pos.coords.latitude;
             userLon = pos.coords.longitude;
-            btn.textContent = "✅";
-            btn.style.background = "#4CAF50"; // Green
+
+            // Success state
+            btn.classList.remove('loading');
+            btn.classList.add('success');
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M20 6L9 17l-5-5"/>
+            </svg>`;
 
             // Auto-fill address if empty
             const addr = document.getElementById("address");
@@ -248,7 +264,19 @@ window.getLocation = function () {
         (err) => {
             console.error(err);
             alert(locError);
-            btn.textContent = "❌";
+
+            // Error state
+            btn.classList.remove('loading');
+            btn.classList.add('error');
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>`;
+
+            // Reset after 3 seconds
+            setTimeout(() => {
+                btn.classList.remove('error');
+                btn.innerHTML = originalSVG;
+            }, 3000);
         },
         { enableHighAccuracy: true, timeout: 10000 }
     );
