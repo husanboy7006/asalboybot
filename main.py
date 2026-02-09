@@ -983,12 +983,40 @@ if __name__ == "__main__":
         logging.warning("uvloop o‘rnatilmadi: %s", e)
 
     async def main():
-        await start_servers()
+        # Webhook setup
+        WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook")
+        WEBHOOK_URL = APP_PUBLIC_URL.rstrip("/app").rstrip("/") + WEBHOOK_PATH
+        
+        await bot.set_webhook(WEBHOOK_URL)
+        logging.info(f"Using Webhook: {WEBHOOK_URL}")
+
+        # Integrate AIOGRAM with AIOHTTP
+        from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+        
+        workflow_data = {"dispatcher": dp, "bot": bot}
+        webhook_requests_handler = SimpleRequestHandler(
+            dispatcher=dp,
+            bot=bot,
+            **workflow_data
+        )
+        webhook_requests_handler.register(webapp, path=WEBHOOK_PATH)
+        setup_application(webapp, dp, bot=bot)
+
         if ADMIN_CHAT_ID:
             try:
-                await bot.send_message(ADMIN_CHAT_ID, "🚀 Bot ishga tushdi")
+                await bot.send_message(ADMIN_CHAT_ID, "🚀 Bot (Webhook) ishga tushdi")
             except Exception:
                 logging.exception("Start ping yuborilmadi")
-        await dp.start_polling(bot)
+
+        # Start AIOHTTP server
+        runner = web.AppRunner(webapp)
+        await runner.setup()
+        site = web.TCPSite(runner, APP_HOST, APP_PORT)
+        await site.start()
+        
+        logging.info(f"WebApp started on http://{APP_HOST}:{APP_PORT}")
+
+        # Keep alive
+        await asyncio.Event().wait()
 
     asyncio.run(main())
