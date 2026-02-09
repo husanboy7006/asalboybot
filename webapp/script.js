@@ -24,16 +24,46 @@ if (tg) {
 
     // Update static texts based on LANG
     if (LANG === "ru") {
-        document.querySelectorAll(".tab")[0].textContent = "🧺 Все";
-        document.querySelectorAll(".tab")[1].textContent = "🏔 Горный";
-        document.querySelectorAll(".tab")[2].textContent = "🌿 Акация";
-        document.querySelectorAll(".tab")[3].textContent = "🍯 Другое";
+        const tabs = document.querySelectorAll(".tab");
+        if (tabs[0]) tabs[0].textContent = "🧺 Все";
+        if (tabs[1]) tabs[1].textContent = "🏔 Горный";
+        if (tabs[2]) tabs[2].textContent = "🌿 Акация";
+        if (tabs[3]) tabs[3].textContent = "🍯 Другое";
 
-        document.getElementById("btnCheckout").textContent = "Оформить заказ";
-        document.getElementById("name").placeholder = "Ваше имя";
-        document.getElementById("phone").placeholder = "Телефон";
-        document.getElementById("address").placeholder = "Адрес доставки";
-        document.getElementById("locBtn").textContent = "📍 Отправить локацию";
+        const btnCheckout = document.getElementById("btnCheckout");
+        if (btnCheckout) btnCheckout.textContent = "Оформить заказ";
+
+        const nameEl = document.getElementById("name");
+        if (nameEl) nameEl.placeholder = "Ваше имя";
+
+        const phoneEl = document.getElementById("phone");
+        if (phoneEl) phoneEl.placeholder = "Телефон";
+
+        const addressEl = document.getElementById("address");
+        if (addressEl) addressEl.placeholder = "Адрес доставки";
+
+        const locBtn = document.getElementById("locBtn");
+        if (locBtn) locBtn.textContent = "📍";
+
+        // Update cart modal texts
+        const modalHeader = document.querySelector(".modal-header h2");
+        if (modalHeader) modalHeader.innerHTML = 'Корзина <span id="modalCartCount">(0)</span>';
+
+        const summaryLabel = document.querySelector(".cart-summary .row span:first-child");
+        if (summaryLabel) summaryLabel.textContent = "Итого:";
+
+        const formTitle = document.querySelector(".order-form h3");
+        if (formTitle) formTitle.textContent = "Ваши данные";
+
+        const confirmBtn = document.getElementById("confirmOrder");
+        if (confirmBtn) confirmBtn.textContent = "✅ Подтвердить заказ";
+
+        const footerBtn = document.querySelector("#mainFooter button");
+        if (footerBtn) {
+            const countSpan = document.getElementById("footerCount");
+            const count = countSpan ? countSpan.textContent : "0";
+            footerBtn.innerHTML = `Открыть корзину (<span id="footerCount">${count}</span>)`;
+        }
     }
 }
 
