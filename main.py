@@ -981,58 +981,59 @@ if __name__ == "__main__":
             uvloop.install()
     except Exception as e:
         logging.warning("uvloop o‘rnatilmadi: %s", e)
+    async def handle_webhook(request):
+        url = str(request.url)
+        # Check secret token if needed, or just process
+        try:
+            update_data = await request.json()
+            update = types.Update(**update_data)
+            await dp.feed_update(bot, update)
+            return web.Response(text="OK")
+        except Exception as e:
+            logging.error(f"Webhook error: {e}")
+            return web.Response(status=500)
+
     async def main():
-        # Get environment variables
+        # Setup Environment
         WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook")
-        # Ensure we construct the full URL correctly. 
-        # rstrip('/') avoids double slashes, e.g. "https://site.com/" + "/webhook"
-        base_url = APP_PUBLIC_URL.rstrip("/app").rstrip("/") 
+        # Clean URL construction
+        base_url = APP_PUBLIC_URL.rstrip("/app").rstrip("/")
+        if not base_url.startswith("http"):
+             base_url = "https://" + base_url # fallback
         WEBHOOK_URL = base_url + WEBHOOK_PATH
+
+        # 1. Start Server manually
+        app = webapp
+        app.router.add_post(WEBHOOK_PATH, handle_webhook)
         
-        # 1. Start Web Server (AIOHTTP)
-        # We need the server running to handle the webhook requests from Telegram
-        runner = web.AppRunner(webapp)
+        runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, APP_HOST, APP_PORT)
         await site.start()
-        logging.info(f"✅ WebServer started on http://{APP_HOST}:{APP_PORT}")
+        logging.info(f"✅ Server started on http://{APP_HOST}:{APP_PORT}")
 
-        # 2. Reset Webhook (CRITICAL STEP)
-        # Remove any existing webhook to avoid conflicts, then set new one
-        logging.info("♻️ Resetting webhook...")
-        await bot.delete_webhook(drop_pending_updates=True)
-        await asyncio.sleep(1) # Give Telegram API a moment
+        # 2. Set Webhook securely
+        try:
+            # Delete old webhook first
+            await bot.delete_webhook(drop_pending_updates=True)
+            await asyncio.sleep(1)
+            # Set new webhook
+            await bot.set_webhook(WEBHOOK_URL)
+            logging.info(f"✅ Webhook set: {WEBHOOK_URL}")
+        except Exception as e:
+            logging.error(f"❌ Webhook setting failed: {e}")
 
-        # 3. Set Webhook
-        await bot.set_webhook(WEBHOOK_URL)
-        logging.info(f"✅ Webhook set to: {WEBHOOK_URL}")
-
-        # 4. Connect Dispatcher to Web App
-        from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-        
-        # SimpleRequestHandler handles incoming POST requests from Telegram
-        webhook_requests_handler = SimpleRequestHandler(
-            dispatcher=dp,
-            bot=bot,
-        )
-        # Register the handler to the specific path
-        webhook_requests_handler.register(webapp, path=WEBHOOK_PATH)
-        
-        # Setup application (links bot and dp to app)
-        setup_application(webapp, dp, bot=bot)
-
-        # 4. Notify Admin
+        # 3. Notify Admin
         if ADMIN_CHAT_ID:
             try:
-                await bot.send_message(ADMIN_CHAT_ID, f"🚀 Bot (Webhook) ishga tushdi!\nURL: {APP_PUBLIC_URL}")
+                await bot.send_message(ADMIN_CHAT_ID, f"🚀 Bot (Manual Webhook) ishga tushdi!\n{APP_PUBLIC_URL}")
             except Exception:
-                logging.exception("Start ping yuborilmadi")
+                pass
 
-        # 5. Keep alive indefinitely
-        # Since we are not polling, we just need to keep the event loop running
+        # 4. Keep alive
         await asyncio.Event().wait()
 
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logging.info("Bot stopped!")
+        pass
