@@ -997,12 +997,17 @@ if __name__ == "__main__":
         await site.start()
         logging.info(f"✅ WebServer started on http://{APP_HOST}:{APP_PORT}")
 
-        # 2. Set Webhook
-        # We use 'drop_pending_updates=True' to skip old piled up updates
-        await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
+        # 2. Reset Webhook (CRITICAL STEP)
+        # Remove any existing webhook to avoid conflicts, then set new one
+        logging.info("♻️ Resetting webhook...")
+        await bot.delete_webhook(drop_pending_updates=True)
+        await asyncio.sleep(1) # Give Telegram API a moment
+
+        # 3. Set Webhook
+        await bot.set_webhook(WEBHOOK_URL)
         logging.info(f"✅ Webhook set to: {WEBHOOK_URL}")
 
-        # 3. Connect Dispatcher to Web App
+        # 4. Connect Dispatcher to Web App
         from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
         
         # SimpleRequestHandler handles incoming POST requests from Telegram
