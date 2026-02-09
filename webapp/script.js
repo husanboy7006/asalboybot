@@ -24,9 +24,11 @@ if (tg) {
 
     // Update static texts based on LANG
     if (LANG === "ru") {
-        document.querySelectorAll(".tab")[0].textContent = "🍯 Все";
+        document.querySelectorAll(".tab")[0].textContent = "🧺 Все";
         document.querySelectorAll(".tab")[1].textContent = "🏔 Горный";
         document.querySelectorAll(".tab")[2].textContent = "🌿 Акация";
+        document.querySelectorAll(".tab")[3].textContent = "🍯 Другое";
+
         document.getElementById("btnCheckout").textContent = "Оформить заказ";
         document.getElementById("name").placeholder = "Ваше имя";
         document.getElementById("phone").placeholder = "Телефон";
