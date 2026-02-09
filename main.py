@@ -234,11 +234,14 @@ class QuickCheckout(StatesGroup):
 # ============ KEYBOARDS ============
 def main_kb(lang="uz") -> ReplyKeyboardMarkup:
     labels = TR[lang]["menu"] if lang in TR else TR["uz"]["menu"]
+    # App URL with language query param
+    web_url = f"{APP_PUBLIC_URL}?lang={lang}"
+    
     kb_rows = [
         # [KeyboardButton(text=labels[0])],  <-- Removed Katalog
         [KeyboardButton(text=labels[1])],
         [KeyboardButton(text=labels[2])],
-        [KeyboardButton(text=t(lang, "webapp"), web_app=WebAppInfo(url=APP_PUBLIC_URL))],
+        [KeyboardButton(text=t(lang, "webapp"), web_app=WebAppInfo(url=web_url))],
     ]
     return ReplyKeyboardMarkup(keyboard=kb_rows, resize_keyboard=True)
 

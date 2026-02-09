@@ -1,11 +1,24 @@
 const tg = window.Telegram?.WebApp;
 let LANG = "uz";
+
+// Helper to get URL query params
+function getQueryParam(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+// 1. Try URL param
+const urlLang = getQueryParam("lang");
+if (urlLang === "ru" || urlLang === "uz") {
+    LANG = urlLang;
+}
+// 2. Fallback to Telegram info
+else if (tg?.initDataUnsafe?.user?.language_code === "ru") {
+    LANG = "ru";
+}
+
 if (tg) {
     tg.expand();
-    // Detect Language
-    const userLang = tg.initDataUnsafe?.user?.language_code;
-    if (userLang === "ru") LANG = "ru";
-
     tg.MainButton.textColor = "#000000";
     tg.MainButton.color = "#FFD700";
 
