@@ -43,6 +43,38 @@ dp  = Dispatcher(storage=MemoryStorage())
 def is_admin(uid: int) -> bool:
     return bool(ADMIN_USER_ID and uid == ADMIN_USER_ID)
 
+import hmac
+import hashlib
+from urllib.parse import parse_qsl
+
+def validate_init_data(init_data: str, token: str) -> bool:
+    """
+    Validates the data received from the Telegram Web App.
+    https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+    """
+    try:
+        parsed_data = dict(parse_qsl(init_data, strict_parsing=True))
+    except ValueError:
+        return False
+
+    if "hash" not in parsed_data:
+        return False
+
+    hash_from_telegram = parsed_data.pop("hash")
+    
+    # Sort the dictionary keys to ensure correct data-check-string creation
+    data_check_string = "\n".join(
+        f"{k}={v}" for k, v in sorted(parsed_data.items())
+    )
+    
+    secret_key = hmac.new(b"WebAppData", token.encode(), hashlib.sha256).digest()
+    
+    calculated_hash = hmac.new(
+        secret_key, data_check_string.encode(), hashlib.sha256
+    ).hexdigest()
+    
+    return calculated_hash == hash_from_telegram
+
 
 # ============ TRANSLATIONS ============
 TR = {
@@ -868,6 +900,99 @@ async def api_products(request: web.Request):
     return web.json_response({"items": products})
 
 
+async def api_order(request: web.Request):
+    """
+    Handles order checkout directly from the WebApp via fetch().
+    Expects JSON payload with initData and order details.
+    """
+    try:
+        payload = await request.json()
+    except Exception:
+        return web.json_response({"success": False, "error": "Invalid JSON"}, status=400)
+
+    init_data = payload.get("initData")
+    if not init_data or not validate_init_data(init_data, BOT_TOKEN):
+        return web.json_response({"success": False, "error": "Invalid initData"}, status=401)
+
+    # Decode initData to find user
+    from urllib.parse import parse_qsl
+    parsed_data = dict(parse_qsl(init_data))
+    user_str = parsed_data.get("user")
+    
+    user_info = {}
+    if user_str:
+        user_info = json.loads(user_str)
+    
+    user_id = user_info.get("id", 0)
+    username = user_info.get("username", "")
+    lang = user_info.get("language_code", "uz")
+    
+    cart = []
+    total = 0
+    for it in payload.get("items", []):
+        p = find_product(it.get("id"))
+        if not p:
+            continue
+        qty = int(it.get("qty", 1))
+        one = unit_price_1kg(p)
+        price = one * qty
+        p_name = p.get("name_uz") if lang == "uz" else p.get("name_ru")
+        p_name = p_name or p.get("name_uz") or "Nomsiz"
+
+        cart.append({
+            "product_id": str(p["id"]),
+            "name": p_name,
+            "kg": 1.0,
+            "qty": qty,
+            "unit_price": one,
+            "price": price,
+        })
+        total += price
+        
+    name = payload.get("name", "")
+    phone = payload.get("phone", "")
+    address = payload.get("address", "")
+    lat = payload.get("lat")
+    lon = payload.get("lon")
+    
+    order_id = save_order_to_db(user_id, name, phone, address, cart, total, lat=lat, lon=lon)
+    
+    maps_link = ""
+    if lat and lon:
+        link_url = f"https://www.google.com/maps?q={lat},{lon}"
+        maps_link = f"\n📍 <a href='{link_url}'>Google Xarita</a>"
+
+    user_handle = f"@{username}" if username else "N/A"
+    
+    txt = (
+        f"🆕 WebApp buyurtma #{order_id}\n"
+        f"👤 Kimdan: {html.quote(name)}\n"
+        f"🧑‍💻 User: {user_handle} ({user_id})\n"
+        f"📞 Telefon: {html.quote(phone)}\n"
+        f"🏠 Manzil: {html.quote(address)}{maps_link}\n\n"
+        f"🛒 Mahsulotlar:\n"
+    )
+    for it in cart:
+        txt += f"• {it['name']} — 1 kg x{it['qty']} — {it['price']} \n"
+    txt += f"\nJami: {total} so'm"
+    
+    if ADMIN_CHAT_ID:
+        try:
+            await bot.send_message(ADMIN_CHAT_ID, txt, disable_web_page_preview=True)
+            if lat and lon:
+                await bot.send_location(ADMIN_CHAT_ID, latitude=lat, longitude=lon)
+        except Exception:
+            logging.exception("Adminga yuborilmadi (webapp fetch)")
+            
+    # Send confirmation to user
+    try:
+        await bot.send_message(user_id, f"✅ Buyurtmangiz qabul qilindi! ID: #{order_id}\nTez orada bog'lanamiz.")
+    except Exception:
+        pass # User hasn't started the bot or blocked it
+        
+    return web.json_response({"success": True, "order_id": order_id})
+
+
 async def app_index(request: web.Request):
     print(f"📥 REQUEST: {request.path}")
     return web.FileResponse(path=os.path.join("webapp", "index.html"))
@@ -912,6 +1037,7 @@ async def get_telegram_image(request: web.Request):
 
 
 webapp.router.add_get("/api/products", api_products)
+webapp.router.add_post("/api/order", api_order)
 webapp.router.add_get("/app", app_index)
 webapp.router.add_get("/style.css", style_css)
 webapp.router.add_get("/script.js", script_js)

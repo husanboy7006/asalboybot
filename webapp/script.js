@@ -22,6 +22,9 @@ if (tg) {
     tg.MainButton.textColor = "#000000";
     tg.MainButton.color = "#FFD700";
 
+    // Bind MainButton to the custom submitOrder function
+    tg.MainButton.onClick(window.submitOrder);
+
     // Update static texts based on LANG
     if (LANG === "ru") {
         const tabs = document.querySelectorAll(".tab");
@@ -132,9 +135,15 @@ window.toggleCart = function () {
     }
     if (modal.classList.contains("open")) {
         modal.classList.remove("open");
+        if (tg) tg.MainButton.hide(); // Hide main button when closing cart
     } else {
         renderCart();
         modal.classList.add("open");
+        if (cart.size > 0 && tg) {
+            const btnText = LANG === "ru" ? "Оформить заказ" : "Buyurtma berish";
+            tg.MainButton.text = btnText;
+            tg.MainButton.show(); // Show main button when cart is open and not empty
+        }
     }
 };
 
@@ -283,14 +292,14 @@ window.getLocation = function () {
 };
 
 // --- CHECKOUT ---
-window.submitOrder = () => {
+window.submitOrder = async () => {
     const name = document.getElementById("name").value.trim();
     const phone = document.getElementById("phone").value.trim();
     const address = document.getElementById("address").value.trim();
 
     const emptyText = LANG === "ru" ? "Корзина пуста!" : "Savatcha bo'sh!";
-    const fillText = LANG === "ru" ? "Пожалуйста, заполните все поля (Имя, Телефон, Адрес)." : "Iltimos, barcha ma'lumotlarni to'ldiring (Ism, Telefon, Manzil).";
-    const sentText = LANG === "ru" ? "Заказ отправлен! (Desktop)" : "Order sent! (Desktop mode)";
+    const fillText = LANG === "ru" ? "Пожалуйста, заполните все поля (Имя, Телефон, Адрес)." : "Iltimos, barcha ma'lumotlarni (Ism, Telefon, Manzil) to'ldiring.";
+    const errText = LANG === "ru" ? "Ошибка при отправке заказа." : "Buyurtma yuborishda xatolik yuz berdi.";
 
     const items = [];
     cart.forEach((qty, id) => items.push({ id, qty }));
@@ -299,21 +308,64 @@ window.submitOrder = () => {
         tg?.showAlert(emptyText);
         return;
     }
-    if (!name || !phone) { // Address is optional if loc provided? Let's keep it required but auto-filled.
+    if (!name || !phone) {
         tg?.showAlert(fillText);
         return;
     }
 
+    if (tg?.HapticFeedback) {
+        tg.HapticFeedback.impactOccurred('medium');
+    }
+
     const payload = {
+        initData: tg?.initData || "",
         items, name, phone, address,
         lat: userLat,
         lon: userLon
     };
 
-    if (tg) tg.sendData(JSON.stringify(payload));
-    else {
-        console.log("Order payload:", payload);
-        alert(sentText);
+    // Make the confirm button loading state
+    const confirmBtn = document.getElementById("confirmOrder");
+    const originalText = confirmBtn.textContent;
+    confirmBtn.textContent = "⏳...";
+    confirmBtn.disabled = true;
+
+    try {
+        const response = await fetch('/api/order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('success');
+            }
+            if (tg) {
+                tg.close(); // Close the WebApp on success
+            } else {
+                alert("Order Sent! ID: " + result.order_id);
+            }
+        } else {
+            if (tg?.HapticFeedback) {
+                tg.HapticFeedback.notificationOccurred('error');
+            }
+            tg?.showAlert(errText + " (" + (result.error || "Unknown") + ")");
+            confirmBtn.textContent = originalText;
+            confirmBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error("Order submit error:", error);
+        if (tg?.HapticFeedback) {
+            tg.HapticFeedback.notificationOccurred('error');
+        }
+        tg?.showAlert(errText);
+        confirmBtn.textContent = originalText;
+        confirmBtn.disabled = false;
     }
 };
 

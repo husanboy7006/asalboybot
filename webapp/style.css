@@ -1,15 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-color: #121212;
-  --card-bg: #1E1E1E;
-  --text-main: #FFFFFF;
-  --text-sec: #B0B0B0;
-  --accent: #FFD700;
-  /* Gold */
+  --bg-color: var(--tg-theme-bg-color, #121212);
+  --card-bg: var(--tg-theme-secondary-bg-color, #1E1E1E);
+  --text-main: var(--tg-theme-text-color, #FFFFFF);
+  --text-sec: var(--tg-theme-hint-color, #B0B0B0);
+  --accent: var(--tg-theme-button-color, #FFD700);
+  /* Default Gold or TG Button Color */
   --accent-dark: #FFA500;
   /* Darker Gold */
-  --btn-text: #000000;
+  --btn-text: var(--tg-theme-button-text-color, #000000);
   --glass: rgba(30, 30, 30, 0.8);
   --border: rgba(255, 215, 0, 0.1);
 }
@@ -487,20 +487,6 @@ input:focus {
   50% {
     opacity: 0.7;
   }
-}
-
-#confirmOrder {
-  margin-top: 20px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  color: #000;
-  border: none;
-  padding: 16px;
-  border-radius: 12px;
-  font-size: 18px;
-  font-weight: 800;
-  width: 100%;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 }
 
 .main-footer {
