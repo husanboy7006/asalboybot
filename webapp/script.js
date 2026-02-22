@@ -76,11 +76,9 @@ const grid = document.getElementById("grid");
 const tabs = document.querySelectorAll(".tab");
 const cartCount = document.getElementById("cartCount");
 
-// Better Honey Placeholders
+// Neutral placeholders
 const PLACEHOLDERS = [
-    "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=400&q=80", // Honey jar
-    "https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=400&q=80", // Honeycomb
-    "https://images.unsplash.com/photo-1587049548423-4213d2f0ffae?auto=format&fit=crop&w=400&q=80"  // Spoon
+    "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIHZpZXdCb3g9IjAgMCA0MDAgMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGVkZWRlIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjYWFhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+UmFzbSBZbXEnPC90ZXh0Pjwvc3ZnPg=="
 ];
 
 tabs.forEach(btn => {
