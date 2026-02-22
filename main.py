@@ -1038,6 +1038,7 @@ async def get_telegram_image(request: web.Request):
 
 webapp.router.add_get("/api/products", api_products)
 webapp.router.add_post("/api/order", api_order)
+webapp.router.add_get("/", app_index)
 webapp.router.add_get("/app", app_index)
 webapp.router.add_get("/style.css", style_css)
 webapp.router.add_get("/script.js", script_js)
